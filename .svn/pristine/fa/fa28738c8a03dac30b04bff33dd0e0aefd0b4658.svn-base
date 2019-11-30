@@ -1,0 +1,92 @@
+<template>
+	<view class="content">
+		<view class="ticheng-item" v-for="(item,index) of tichengList">
+			<view class="item-title">提成明细</view>
+			<view class='item-list'>
+				<label class="list-title">产品名称</label>
+				<text class="list-desc">{{item.ProductName}}</text>
+			</view>
+			<view class='item-list'>
+				<label class="list-title">产品金额</label>
+				<text class="list-desc">{{item.ProductPrise}}元</text>
+			</view>
+			<view class='item-list'>
+				<label class="list-title">分成百分比</label>
+				<text class="list-desc">{{item.IngredientRed}}%</text>
+			</view>
+			<view class='item-list'>
+				<label class="list-title">产品分红</label>
+				<text class="list-desc">{{item.ProductRebate}}元</text>
+			</view>
+			<view class='item-list'>
+				<label class="list-title">备注</label>
+				<text class="list-desc">{{item.Remake}}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import globals from '../../config.js'
+	export default {
+		data() {
+			return {
+				tichengList:[]
+			}
+		},
+		onLoad() {
+			var userID=uni.getStorageSync('userId');
+			console.log('userid',userID);
+            uni.request({
+				url: globals.url + 'CommissionDetail/GetCommissionDetail?ID='+userID,
+				header: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/x-www-form-urlencoded'
+				},
+				method: 'GET',
+				success: (res) => {
+					uni.hideLoading();
+					console.log('提成明细',res);
+					if(res.data.code==0){
+						this.tichengList=res.data.data;
+					}else{
+						uni.showToast({
+							title:res.data.ErrMsg
+						})
+					}
+				}
+			})
+		},
+		methods: {
+		}
+	}
+</script>
+
+<style lang="less">
+	page{
+		background: #f7f7f8;
+		font-size: 14px;
+	}
+	.content{
+		.ticheng-item{
+			background: #fff;
+			width: 80%;
+			margin: 6% 10%;
+			border-radius: 5px;
+			overflow:hidden;
+			padding-bottom:30upx;
+			.item-title{
+				margin:20upx 0 40upx 30upx;
+			}
+			.item-list{
+				margin-left:30upx;
+				display:flex;
+				line-height:25px;
+				.list-title{
+					color: #333;
+					width: 40%;
+				}
+			}
+		}
+	}
+</style>

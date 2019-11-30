@@ -1,0 +1,4 @@
+var url="http://122.114.77.161:8090/api/"
+export default{
+	url:url
+}

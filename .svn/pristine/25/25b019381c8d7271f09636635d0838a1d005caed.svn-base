@@ -1,0 +1,348 @@
+<template>
+	<view class="content">
+		<view class="forms">
+			<view class="person-item">
+				<label>姓名</label>
+				<input type="text" placeholder="填写姓名" v-model="Name"/>
+			</view>
+			<view class="person-item">
+				<label>身份证号</label>
+				<input type="text" placeholder="填写身份证号" v-model="IDCard"/>
+			</view>
+			<view class="person-pic">
+				<view class="pic-title">上传身份证照片</view>
+				<view class="pic-list">
+					<view class="uploadPic" @click="zmPic" v-if="IDCardPositive!=''">
+						<image :src="IDCardPositive" class="newPic"></image>
+					</view>
+					<view class="uploadPic" @click="zmPic" v-else>
+						<image src="../../static/photo.png" class="oldPic"></image>
+						<text>上传正面照片</text>
+					</view>
+					<view class="uploadPic" @click="fmPic" v-if="IDCardNegative!=''">
+						<image :src="IDCardNegative" class="newPic"></image>
+					</view>
+					<view class="uploadPic" @click="fmPic" v-else>
+						<image src="../../static/photo.png" class="oldPic"></image>
+						<text>上传反面照片</text>
+					</view>
+					<view class="uploadPic" @click="ewm" v-if="QRCode!=''">
+						<image :src="QRCode" class="newPic"></image>
+					</view>
+					<view class="uploadPic" @click="ewm" v-else>
+						<image src="../../static/photo.png" class="oldPic"></image>
+						<text>上传二维码</text>
+					</view>
+				</view>
+			</view>
+			<view class="person-item">
+				<label>微信号</label>
+				<input type="text" placeholder="填写微信号" v-model="WeChat"/>
+			</view>
+			<view class="person-item">
+				<label>地址</label>
+				<input type="text" placeholder="填写地址" v-model="Address"/>
+			</view>
+			<view class="person-item">
+				<label>银行卡号</label>
+				<input type="text" placeholder="填写银行卡号" v-model="BankCardNumber"/>
+			</view>
+			<view class="person-item">
+				<label>产品名称</label>
+				<input type="text" placeholder="填写产品名称" v-model="ProductName"/>
+			</view>
+			<view class="person-pic">
+				<view class="pic-title">购买产品</view>
+				<view class="pic-list">
+					<view class="uploadPic" @click="proPic" v-if="ProductImg!=''">
+						<image :src="ProductImg" class="newPic"></image>
+					</view>
+					<view class="uploadPic" @click="proPic" v-else>
+						<image src="../../static/photo.png" class="oldPic"></image>
+						<text>上传照片</text>
+					</view>
+				</view>	
+			</view>
+		</view>
+		<view class="submin-btn" @click="subInfo" :disabled="isDisable">确认</view>
+	</view>
+</template>
+
+<script>
+	import globals from '../../config.js'
+	import qs from '../../qs.js'
+	import { pathToBase64, base64ToPath } from '../../index.js'
+	export default {
+		data() {
+			return {
+				Name:'',
+				IDCard:'',
+				IDCardPositive:'',  //身份证正面
+				IDCardNegative:'',  //身份证反面
+				QRCode:'',          //二维码
+				ProductImg:'',     //产品图片
+				WeChat:'',
+				Address:'',
+				BankCardNumber:'',
+				ProductName:'',
+				isDisable: false,
+			}
+		},
+		onLoad() {
+
+		},
+		methods: {
+			zmPic(){
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['original', 'compressed'],
+					sourceType: ['album'], 
+					success: (res) => {
+						console.log('res',res);
+						pathToBase64(res.tempFilePaths[0])
+						.then(base64 => {
+							let tempFilePaths=base64
+							this.IDCardPositive=tempFilePaths;
+						 })
+						 .catch(error => {
+							console.error(error);
+						 });
+					}
+				})	
+			},
+			fmPic(){
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['original', 'compressed'],
+					sourceType: ['album', 'camera'], 
+					success: (res) => {
+						pathToBase64(res.tempFilePaths[0])
+						.then(base64 => {
+							let tempFilePaths=base64
+							this.IDCardNegative=tempFilePaths;
+						 })
+						 .catch(error => {
+							console.error(error);
+						 });
+					}
+				})
+			},
+			ewm(){
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['original', 'compressed'],
+					sourceType: ['album', 'camera'], 
+					success: (res) => {
+						pathToBase64(res.tempFilePaths[0])
+						.then(base64 => {
+							let tempFilePaths=base64
+							this.QRCode=tempFilePaths;
+						 })
+						 .catch(error => {
+							console.error(error);
+						 });
+					}
+				})
+			},
+			proPic(){
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['original', 'compressed'],
+					sourceType: ['album', 'camera'], 
+					success: (res) => {
+						pathToBase64(res.tempFilePaths[0])
+						.then(base64 => {
+							let tempFilePaths=base64
+							this.ProductImg=tempFilePaths;
+						 })
+						 .catch(error => {
+							console.error(error);
+						 });
+					}
+				})
+			},
+			subInfo(){
+				var userID=uni.getStorageSync('userId');
+				var Name=this.Name;
+				var IDCard=this.IDCard;
+				var WeChat=this.WeChat;
+				var Address=this.Address;
+				var BankCardNumber=this.BankCardNumber;
+				var ProductName=this.ProductName;
+				var IDCardPositive=this.IDCardPositive;
+				var IDCardNegative=this.IDCardNegative;
+				var QRCode=this.QRCode;
+				var ProductImg=this.ProductImg;
+				
+				if(Name==''){
+					uni.showToast({
+						title:'姓名不能为空',
+						icon:'none'
+					})
+				}else if(IDCard==''){
+					uni.showToast({
+						title:'身份证号不能为空',
+						icon:'none'
+					})
+				}else if(PhoneNumber==''){
+					uni.showToast({
+						title:'手机号不能为空',
+						icon:'none'
+					})
+				}else if(WeChat==''){
+					uni.showToast({
+						title:'微信号不能为空',
+						icon:'none'
+					})
+				}else if(Address==''){
+					uni.showToast({
+						title:'地址不能为空',
+						icon:'none'
+					})
+				}else if(BankCardNumber==''){
+					uni.showToast({
+						title:'银行卡号不能为空',
+						icon:'none'
+					})
+				}else if(ProductName==''){
+					uni.showToast({
+						title:'产品名称不能为空',
+						icon:'none'
+					})
+				}else if(IDCardPositive==''){
+					uni.showToast({
+						title:'身份证正面不能为空',
+						icon:'none'
+					})
+				}else if(IDCardNegative==''){
+					uni.showToast({
+						title:'身份证反面不能为空',
+						icon:'none'
+					})
+				}else if(QRCode==''){
+					uni.showToast({
+						title:'二维码不能为空',
+						icon:'none'
+					})
+				}else if(ProductImg==''){
+					uni.showToast({
+						title:'产品图片不能为空',
+						icon:'none'
+					})
+				}else{
+					this.isDisable = true;
+					var data={
+						ID:userID,
+						Name:Name,
+						IDCard:IDCard,
+						WeChat:WeChat,
+						Address:Address,
+						BankCardNumber:BankCardNumber,
+						ProductName:ProductName,
+						IDCardPositive:IDCardPositive,
+						IDCardNegative:IDCardNegative,
+						QRCode:QRCode,
+						ProductImg:ProductImg
+					}
+					
+					uni.request({
+						url: globals.url + 'Personal/SavePersonalInfo',
+						header: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/x-www-form-urlencoded'
+						},
+						data:qs.stringify(data),
+						method: 'POST',
+						success: (res) => {
+							uni.hideLoading();
+							console.log('个人信息',res);
+							if(res.data.code==0){
+								this.Name='';
+								this.IDCard='';
+								this.WeChat='';
+								this.Address='';
+								this.BankCardNumber='';
+								this.ProductName='';
+								this.IDCardPositive='';
+								this.IDCardNegative='';
+								this.QRCode='';
+								this.ProductImg='';
+								this.isDisable = false;
+							}else{
+								uni.showToast({
+									title:res.data.ErrMsg
+								})
+							}
+						}
+					})
+					console.log('data',data);
+				}
+			}
+		}
+	}
+</script>
+
+<style lang="less">
+	page{
+		font-size: 14px;
+	}
+	.forms{
+		.person-item,.person-pic{
+			padding: 26upx 40upx;
+			border-bottom: 1px solid #f0eff5;
+		}
+		.person-item{
+			display: flex;
+			label{
+				width: 40%;
+			}
+			.uni-input-placeholder{
+				font-size: 14px;
+			}
+		}
+		.person-pic{
+			&:last-child{
+				border-bottom: 0;
+			}
+			.pic-list{
+				display: flex;
+				.uploadPic{
+					display:flex;
+					flex-direction:column;
+					justify-content: center;
+					align-items: center;
+					border: 1px solid #2f83ff;
+					border-radius:10upx;
+					background:rgba(4,167,234,8%);
+					height:160upx;
+					width:160upx;
+					font-size:12px;
+					color:#2f83ff;
+					margin-top:30upx;
+					margin-right:40upx;
+					.oldPic{
+						width: 20px;
+						height: 20px;
+						margin-bottom: 16upx;
+					}
+					.newPic{
+						height:160upx;
+						width:160upx;
+					}
+				}
+			}
+		}
+	}
+	.submin-btn{
+		background: #2f83ff;
+		color: #fff;
+		border-radius: 10upx;
+		width: 90%;
+		height: 80upx;
+		line-height: 80upx;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin:40upx auto;
+	}
+</style>

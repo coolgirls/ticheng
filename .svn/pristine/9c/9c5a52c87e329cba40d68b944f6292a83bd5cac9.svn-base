@@ -1,0 +1,525 @@
+<template>
+	<view class="content">
+		<view class="forms">
+			<view class="person-item">
+				<label>姓名</label>
+				<block v-if="userID!=''">
+					<input type="text" placeholder="填写姓名" v-model="userInfo.Name"/>
+				</block>
+				<block v-else>
+					<input type="text" placeholder="填写姓名" v-model="Name"/>
+				</block>
+			</view>
+			<view class="person-item">
+				<label>身份证号</label>
+				<block v-if="userID!=''">
+				    <input type="text" placeholder="填写身份证号" v-model="userInfo.IDCard"/>
+				</block>
+				<block v-else>
+					<input type="text" placeholder="填写身份证号" v-model="IDCard"/>
+				</block>	
+			</view>
+			<view class="person-pic">
+				<view class="pic-title">上传身份证照片</view>
+				<view class="pic-list">
+					<view class="uploadPic" v-if="userID!=''">
+						<image :src="'http://110.fonery.cn:8025'+userInfo.IDCardPositive" class="newPic" mode="aspectFill"></image>
+					</view>
+					<view class="uploadPic" @click="zmPic" v-else-if="IDCardPositive!=''">
+						<image :src="IDCardPositive" class="newPic" mode="aspectFill"></image>
+					</view>
+					<view class="uploadPic" @click="zmPic" v-else>
+						<image src="../../static/photo.png" class="oldPic" mode="aspectFill"></image>
+						<text>上传正面照片</text>
+					</view>
+					
+					<view class="uploadPic" v-if="userID!=''">
+						<image :src="'http://110.fonery.cn:8025'+userInfo.IDCardNegative" class="newPic" mode="aspectFill"></image>
+					</view>
+					<view class="uploadPic" @click="fmPic" v-else-if="IDCardNegative!=''">
+						<image :src="IDCardNegative" class="newPic" mode="aspectFill"></image>
+					</view>
+					<view class="uploadPic" @click="fmPic" v-else>
+						<image src="../../static/photo.png" class="oldPic" mode="aspectFill"></image>
+						<text>上传反面照片</text>
+					</view>
+					
+					<view class="uploadPic" v-if="userID!=''">
+						<image :src="'http://110.fonery.cn:8025'+userInfo.QRCode" class="newPic" mode="aspectFill"></image>
+					</view>
+					<view class="uploadPic" @click="ewm" v-else-if="QRCode!=''">
+						<image :src="QRCode" class="newPic" mode="aspectFill"></image>
+					</view>
+					<view class="uploadPic" @click="ewm" v-else>
+						<image src="../../static/photo.png" class="oldPic" mode="aspectFill"></image>
+						<text>上传二维码</text>
+					</view>
+				</view>
+			</view>
+			<view class="person-item">
+				<label>微信号</label>
+				<block v-if="userID!=''">
+				    <input type="text" placeholder="填写微信号" v-model="userInfo.WeChat"/>
+				</block>
+				<block v-else>
+					<input type="text" placeholder="填写微信号" v-model="WeChat"/>
+				</block>
+			</view>
+			<view class="person-item">
+				<label>地址</label>
+				<block v-if="userID!=''">
+				    <input type="text" placeholder="填写地址" v-model="userInfo.Address"/>
+				</block>
+				<block v-else>
+					<input type="text" placeholder="填写地址" v-model="Address"/>
+				</block>
+			</view>
+			<view class="person-item">
+				<label>银行卡号</label>
+				<block v-if="userID!=''">
+				    <input type="text" placeholder="填写银行卡号" v-model="userInfo.BankCardNumber"/>
+				</block>
+				<block v-else>
+					<input type="text" placeholder="填写银行卡号" v-model="BankCardNumber"/>
+				</block>
+			</view>
+		</view>
+		<view class="btns">
+			<view class="userInfo-btn" @click="subInfo" :disabled="isDisable" v-if="isShow">保存</view>
+			<view class="product-btn" @click="subProduct" >新增产品</view>
+		</view>
+		
+	</view>
+</template>
+
+<script>
+	let len =9;
+	import globals from '../../config.js'
+	import qs from '../../qs.js'
+	import { pathToBase64, base64ToPath } from '../../index.js'
+	var size='';
+	export default {
+		data() {
+			return {
+				Name:'',
+				IDCard:'',
+				IDCardPositive:'',  //身份证正面
+				IDCardNegative:'',  //身份证反面
+				QRCode:'',          //二维码
+				WeChat:'',
+				Address:'',
+				BankCardNumber:'',
+				isDisable: false,
+				userID:'',  //用户id
+				userInfo:{} ,//第二次进来获取之前填写的信息
+				isShow: true
+			}
+		},
+		onLoad() {
+			this.userID=uni.getStorageSync('userId');
+			if(this.userID!=''){
+				var data={
+					ID:this.userID
+				}
+				uni.request({
+					url: globals.url + 'Personal/GetPersonalInfo',
+					header: {
+						'Accept': 'application/json',
+						'Content-Type': 'application/x-www-form-urlencoded'
+					},
+					data:qs.stringify(data),
+					method: 'POST',
+					success: (res) => {
+						this.userInfo=res.data.data
+						console.log('人员信息',res);
+					},
+				})
+				this.isShow=false;
+			}
+		},
+		methods: {
+			zmPic(){
+				var _self=this;
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['compressed'],
+					sourceType: ['album'], 
+					success: (res) => {
+						console.log('res',res);
+						var limit=res.tempFiles[0].size;
+						if(limit> 1024){
+						 size = (limit / 1024 * 100) / 100;
+						}
+						console.log('sizes',size);
+						if(size>50){
+							uni.getImageInfo({
+								src: res.tempFilePaths[0],
+								success: function (res) {
+									console.log('压缩前',res);
+									console.log(res.width);
+									console.log(res.height);
+									let canvasWidth = res.width //图片原始长宽
+									let canvasHeight = res.height
+									let img = new Image()
+									img.src = res.path
+									let canvas = document.createElement('canvas');
+									let ctx = canvas.getContext('2d');
+									canvas.width = canvasWidth /8;
+									canvas.height = canvasHeight /8;
+									console.log('后',canvas.width);
+									console.log('后',canvas.height);
+									ctx.drawImage(img, 0, 0, canvasWidth / 8, canvasHeight /8);
+									canvas.toBlob(function(fileSrc) {
+										let imgSrc=window.URL.createObjectURL(fileSrc);
+										pathToBase64(imgSrc)
+										.then(base64 => {
+											let tempFilePaths=base64;
+											_self.IDCardPositive=tempFilePaths;
+										 })
+										 .catch(error => {
+											console.error(error);
+										 });
+										
+									})
+								}
+							});
+						}else{
+							pathToBase64(res.tempFilePaths[0])
+							.then(base64 => {
+								let tempFilePaths=base64
+								_self.IDCardPositive=tempFilePaths;
+								console.log(2);
+							 })
+							 .catch(error => {
+								console.error(error);
+							 });
+						}
+					},
+				})
+			},
+			fmPic(){
+				var _self=this;
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['compressed'],
+					sourceType: ['album'], 
+					success: (res) => {
+						var limit=res.tempFiles[0].size;
+						if(limit> 1024){
+						 size = (limit / 1024 * 100) / 100;
+						}
+						if(size>50){
+							uni.getImageInfo({
+								src: res.tempFilePaths[0],
+								success: function (res) {
+									console.log('压缩前',res);
+									console.log(res.width);
+									console.log(res.height);
+									let canvasWidth = res.width //图片原始长宽
+									let canvasHeight = res.height
+									let img = new Image()
+									img.src = res.path
+									let canvas = document.createElement('canvas');
+									let ctx = canvas.getContext('2d');
+									canvas.width = canvasWidth /8;
+									canvas.height = canvasHeight / 8;
+									console.log('后',canvas.width);
+									console.log('后',canvas.height);
+									ctx.drawImage(img, 0, 0, canvasWidth /8, canvasHeight /8);
+									canvas.toBlob(function(fileSrc) {
+										let imgSrc=window.URL.createObjectURL(fileSrc);
+										pathToBase64(imgSrc)
+										.then(base64 => {
+											let tempFilePaths=base64;
+											_self.IDCardNegative=tempFilePaths;
+										 })
+										 .catch(error => {
+											console.error(error);
+										 });
+									})
+								}
+							});
+						}else{
+							pathToBase64(res.tempFilePaths[0])
+							.then(base64 => {
+								let tempFilePaths=base64
+								_self.IDCardNegative=tempFilePaths;
+								console.log(2);
+							 })
+							 .catch(error => {
+								console.error(error);
+							 });
+						}
+					}
+				})
+			},
+			ewm(){
+				var _self=this;
+				uni.chooseImage({
+					count: 1, // 默认9
+					sizeType: ['compressed'],
+					sourceType: ['album'], 
+					success: (res) => {
+						var limit=res.tempFiles[0].size;
+						if(limit> 1024){
+						 size = (limit / 1024 * 100) / 100;
+						}
+						if(size>50){
+							uni.getImageInfo({
+								src: res.tempFilePaths[0],
+								success: function (res) {
+									console.log('压缩前',res);
+									console.log(res.width);
+									console.log(res.height);
+									let canvasWidth = res.width //图片原始长宽
+									let canvasHeight = res.height
+									let img = new Image()
+									img.src = res.path
+									let canvas = document.createElement('canvas');
+									let ctx = canvas.getContext('2d');
+									canvas.width = canvasWidth / 8;
+									canvas.height = canvasHeight / 8;
+									console.log('后',canvas.width);
+									console.log('后',canvas.height);
+									ctx.drawImage(img, 0, 0, canvasWidth / 8, canvasHeight /8);
+									canvas.toBlob(function(fileSrc) {
+										let imgSrc=window.URL.createObjectURL(fileSrc);
+										pathToBase64(imgSrc)
+										.then(base64 => {
+											let tempFilePaths=base64;
+											_self.QRCode=tempFilePaths;
+										 })
+										 .catch(error => {
+											console.error(error);
+										 });
+										
+									})
+								}
+							});
+						}else{
+							pathToBase64(res.tempFilePaths[0])
+							.then(base64 => {
+								let tempFilePaths=base64
+								_self.QRCode=tempFilePaths;
+								console.log(2);
+							 })
+							 .catch(error => {
+								console.error(error);
+							 });
+						}
+					}
+				})
+			},
+			subProduct(){
+				uni.navigateTo({
+					url:'../product/product'
+				})
+			},
+			subInfo(){
+				var userID=uni.getStorageSync('userId');
+				var Name=this.Name;
+				var IDCard=this.IDCard;
+				var WeChat=this.WeChat;
+				var Address=this.Address;
+				var BankCardNumber=this.BankCardNumber;
+				var IDCardPositive=this.IDCardPositive;
+				var IDCardNegative=this.IDCardNegative;
+				var QRCode=this.QRCode;			
+				if(Name==''){
+					uni.showToast({
+						title:'姓名不能为空',
+						icon:'none'
+					})
+				}else if(IDCard==''){
+					uni.showToast({
+						title:'身份证号不能为空',
+						icon:'none'
+					})
+				}else if(WeChat==''){
+					uni.showToast({
+						title:'微信号不能为空',
+						icon:'none'
+					})
+				}else if(Address==''){
+					uni.showToast({
+						title:'地址不能为空',
+						icon:'none'
+					})
+				}else if(BankCardNumber==''){
+					uni.showToast({
+						title:'银行卡号不能为空',
+						icon:'none'
+					})
+				}else if(IDCardPositive==''){
+					uni.showToast({
+						title:'身份证正面不能为空',
+						icon:'none'
+					})
+				}else if(IDCardNegative==''){
+					uni.showToast({
+						title:'身份证反面不能为空',
+						icon:'none'
+					})
+				}else if(QRCode==''){
+					uni.showToast({
+						title:'二维码不能为空',
+						icon:'none'
+					})
+				}else{
+					this.isDisable = true;
+					uni.showLoading({
+						title:'提交中'
+					})
+					var data={
+						ID:userID,
+						Name:Name,
+						IDCard:IDCard,
+						WeChat:WeChat,
+						Address:Address,
+						BankCardNumber:BankCardNumber,
+						IDCardPositive:IDCardPositive,
+						IDCardNegative:IDCardNegative,
+						QRCode:QRCode
+					}
+					uni.request({
+						url: globals.url + 'Personal/SavePersonalInfo',
+						header: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/x-www-form-urlencoded'
+						},
+						data:qs.stringify(data),
+						method: 'POST',
+						success: (res) => {
+							uni.hideLoading();
+							console.log('个人信息',res);
+							if(res.data.Success==true){
+								uni.showToast({
+									title:'提交成功'
+								})
+								this.Name='';
+								this.IDCard='';
+								this.WeChat='';
+								this.Address='';
+								this.BankCardNumber='';
+								this.IDCardPositive='';
+								this.IDCardNegative='';
+								this.QRCode='';
+								this.isDisable = false;
+							}else{
+								uni.showToast({
+									title:res.data.Message
+								})
+							}
+						}
+					})
+					console.log('data',data);
+				}
+			}
+		}
+	}
+</script>
+
+<style lang="less">
+	page{
+		font-size: 14px;
+	}
+	.forms{
+		.person-item,.person-pic{
+			padding: 26upx 40upx;
+			border-bottom: 1px solid #f0eff5;
+		}
+		.person-item{
+			display: flex;
+			label{
+				width: 40%;
+			}
+			.uni-input-placeholder{
+				font-size: 14px;
+			}
+		}
+		.person-pic{
+			&:last-child{
+				border-bottom: 0;
+			}
+			.pic-list{
+				display: flex;
+				flex-wrap: wrap;
+				.uploadPic{
+					display:flex;
+					flex-direction:column;
+					justify-content: center;
+					align-items: center;
+					border: 1px solid #2f83ff;
+					border-radius:10upx;
+					background:rgba(4,167,234,8%);
+					height:160upx;
+					width:160upx;
+					font-size:12px;
+					color:#2f83ff;
+					margin-top:30upx;
+					margin-right:40upx;
+					.oldPic{
+						width: 20px;
+						height: 20px;
+						margin-bottom: 16upx;
+					}
+					.newPic{
+						height:160upx;
+						width:160upx;
+					}
+				}
+				.pic-item {
+					display: flex;
+					position: relative;
+					z-index: 1;
+					margin-top: 15px;
+					margin-right: 20px;
+				}
+
+				.pic-item .item-pic {
+					width: 80px;
+					height: 80px;
+				}
+
+				.shanchu-btn {
+					position: absolute;
+					top: -7px;
+					right: -7px;
+					z-index: 2;
+					width: 15px;
+					height: 15px;
+				}
+			}
+		}
+	}
+	
+	.btns{
+		display: flex;
+		flex-direction:column;
+		align-items:center;
+		.userInfo-btn{
+			background:#2f83ff;
+			color: #fff;
+			width:70%;
+			margin:40upx 5%  20upx;
+			height: 70upx;
+			line-height: 70upx;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 10upx;
+		}
+		.product-btn{
+			border: 1px solid #2f83ff;
+			color: #2f83ff;
+			width:70%;
+			margin:20upx 5%;
+			height: 70upx;
+			line-height: 70upx;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 10upx;
+		}
+	}
+</style>
